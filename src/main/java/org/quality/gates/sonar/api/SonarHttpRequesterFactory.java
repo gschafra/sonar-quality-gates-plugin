@@ -11,6 +11,7 @@ import org.quality.gates.sonar.api5x.SonarHttpRequester5x;
 import org.quality.gates.sonar.api60.SonarHttpRequester60;
 import org.quality.gates.sonar.api61.SonarHttpRequester61;
 import org.quality.gates.sonar.api80.SonarHttpRequester80;
+import org.quality.gates.sonar.api88.SonarHttpRequester88;
 
 import java.io.IOException;
 
@@ -32,18 +33,28 @@ class SonarHttpRequesterFactory {
             CloseableHttpResponse response = client.execute(request, context);
             String sonarVersion = EntityUtils.toString(response.getEntity());
 
-            if (majorSonarVersion(sonarVersion) <= 5) {
-                return new SonarHttpRequester5x();
-            } else if (majorSonarVersion(sonarVersion) == 6 && minorSonarVersion(sonarVersion) == 0) {
-                return new SonarHttpRequester60();
-            } else if ((majorSonarVersion(sonarVersion) == 6 && minorSonarVersion(sonarVersion) >= 1) || 
-                    majorSonarVersion(sonarVersion) == 7 ) {
-                return new SonarHttpRequester61();
-            } else if (majorSonarVersion(sonarVersion) >= 8 ) {
-                return new SonarHttpRequester80();
+            int sonarVersionMajor = majorSonarVersion(sonarVersion);
+            int sonarVersionMinor = minorSonarVersion(sonarVersion);
+            SonarHttpRequester requester;
+
+            if (sonarVersionMajor <= 5) {
+                requester = new SonarHttpRequester5x();
             } else {
-                throw new UnsuportedVersionException("Plugin doesn't suport this version of sonar api! Please contact the developer.");
+                if (sonarVersionMajor == 6 && sonarVersionMinor == 0) {
+                    requester = new SonarHttpRequester60();
+                } else if ((sonarVersionMajor == 6 && sonarVersionMinor >= 1) ||
+                        sonarVersionMajor == 7 ) {
+                    requester = new SonarHttpRequester61();
+                } else if (sonarVersionMajor == 8 && sonarVersionMinor < 8) {
+                    requester = new SonarHttpRequester80();
+                } else if (sonarVersionMajor == 8) {
+                    requester = new SonarHttpRequester88();
+                } else {
+                    throw new UnsuportedVersionException("Plugin doesn't suport this version of sonar api! Please contact the developer.");
+                }
             }
+
+            return requester;
         } catch (IOException e) {
             throw new ApiConnectionException(e.getLocalizedMessage());
         }

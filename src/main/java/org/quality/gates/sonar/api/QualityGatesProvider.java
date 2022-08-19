@@ -19,7 +19,7 @@ public class QualityGatesProvider {
 
     private QualityGateResponseParser qualityGateResponseParser;
 
-    private SonarHttpRequester sonarHttpRequester;
+    private transient SonarHttpRequester sonarHttpRequester;
 
     private SonarInstanceValidationService sonarInstanceValidationService;
 
